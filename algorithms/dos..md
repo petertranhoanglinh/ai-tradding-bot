@@ -17,25 +17,25 @@ Tài liệu được biên soạn với các mục đích cụ thể:
 - Tính thực tiễn: Kết hợp hài hòa giữa lý thuyết, minh họa thực nghiệm và các ứng dụng trong thực tế.
 ---
 
-**Biên soạn:** *Trần Hoàng Linh petertranhoanglinh@gmail.com*  
+**Biên soạn:** *GS Trần Hoàng Linh petertranhoanglinh@gmail.com*  
 **Chương trình:** *AI ứng dụng từ zero*  
 <div style="page-break-after: always;"></div>
 
 ## Chương 1 Toán học cơ bản
 ### Bài 1 Hồi quy tuyến tính
 #### 1.1 Hồi quy tuyến tính cơ bản Linner Regression Basic
-##### a. công thức
+##### a. Công thức
 \[
 y = b_0 + b_1x
 \]
-##### a. công thức tìm $b_1$
+##### a. Công thức tìm $b_1$
  $$b_1 = \frac{\sum (x_i - \bar{x})(y_i - \bar{y})}{\sum (x_i - \bar{x})^2}$$
-##### b. công thức tìm $b_0$
+##### b. Công thức tìm $b_0$
  $$b_0 = \bar{y} - b_1 \bar{x}$$
 
-##### bài tập ví dụ.
-- Diện tích: 30, 45, 60, 80, 100, 120
-- Giá nhà: 480, 630, 780, 1020, 1200, 1440
+##### Bài tập ví dụ.
+- Diện tích: 30, 45, 60, 80, 100, 120  đơn vị  $~\mathrm{m}^2$
+- Giá nhà: 480, 630, 780, 1020, 1200, 1440  đơn vị triệu đồng
 Dùng hồi quy tuyến tính để dự đoán giá nhà khi diện tích là $80~\mathrm{m}^2$
 
 Giải bài toán: 
@@ -63,9 +63,9 @@ Giải bài toán:
     - tính hệ số $b_0 = \bar{y} - b_1 \bar{x} =  925 - 10.65(72.5) =  153.875$
     
     Phương trình hồi quy dự đoán giá nhà theo m² có dạng: 
-        $$ y = 10.65 + 158.875 x $$
-    Dựa vào phương trình hồi quy ta có thể dự đaons giá nhà khi diện tích là $80~\mathrm{m}^2$ là :
-    $$ PriceHouse = 10.65 + 158.875 \times 80 = 13562 $$
+        $$ y = 153.875 + 10.65 x $$
+    Dựa vào phương trình hồi quy ta có thể dự đoán giá nhà khi diện tích là $80~\mathrm{m}^2$ là :
+    $$ PriceHouse = 153.875 + 10.65 \times 80 = 1005.875 (triệu)  $$ 
     <img src="./image.png" alt="Regression result" width="600">
 ##### Sử dụng trong python cơ bản
 ![alt text](image-2.png)
@@ -79,6 +79,8 @@ Giải bài toán:
         - Dễ bị nhiễu nếu dữ liệu chỉ cần 1 vài dữ liệu ko chính xác sẽ dẫn đến hệ thống bị sụp đổ
         - Không phù hợp với bài toán đánh gía cần nhiều tiêu chí đầu vào.
 
+<div style="page-break-after: always;"></div>
+
 #### 1.2 Hồi quy tuyến tính bội Multiple Linear Regression
 
 ##### a. Khái niệm
@@ -89,10 +91,21 @@ thì trong hồi quy tuyến tính bội, bạn có thể dự đoán giá nhà 
 - Số phòng ngủ
 - Khoảng cách đến trung tâm
 - Năm xây dựng, v.v.
-##### b. công thức
+--> Một mô hình dự đoán có nhiều yếu tố quyết định chúng ta cần sử dụng tuyến tính bội để tạo mô hình thanh vì tuyến tính cơ bản.
+##### b. Công thức
 \[
   y=b_0​+b_1​x_1​+b_2​x_2​+⋯+b_n​x_n​
 \]
+##### c. Bàn luận logic
+
+Nhìn vào công thức của mô hình hồi quy tuyến tính bội, ta thấy rằng để tìm được mối quan hệ giữa các biến độc lập $x_n$ và biến phụ thuộc y, mô hình cần dựa trên một số giả định thống kê nhất định.Hồi quy tuyến tính không đơn thuần là vẽ một đường thẳng “cho đẹp”, mà là ước lượng chính xác nhất mối quan hệ thật giữa các biến, dựa trên những giả định giúp mô hình phản ánh đúng bản chất dữ liệu.
+
+<b> Ta cần dùng giả thuyết thống kê để tìm sự liên hệ giữa chúng</b>
+
+- Giả thuyết vô hiệu:  $H_0 : b_1 = b_2 ... = b_k =0$
+Nếu bạn chứng minh giả thuyết này đúng thì phương trình của bạn là vô nghĩa vì $y$ không hề phụ thuộc $x$.
+
+- Giả thuyết đối $H_1$ thì ngược lại chỉ cần chứng minh 1 hệ số hồi quy khác không thì ta kết luận các biến $x$ dẫn tới 1 phấn sử thay đổi của $y$
 
 
 
