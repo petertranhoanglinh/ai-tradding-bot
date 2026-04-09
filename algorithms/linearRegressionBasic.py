@@ -3,8 +3,8 @@ from sklearn.linear_model import LinearRegression
 import matplotlib.pyplot as plt
 
 # Dữ liệu
-x = np.array([30 , 45, 60, 80, 100, 120]).reshape(-1, 1) # phải là dữ liệu 2d
-y = np.array([480,  630, 780, 1020, 1200, 1440])
+x = np.array([1000 , 2000, 3000, 1000, 3000, 1500]).reshape(-1, 1) # phải là dữ liệu 2d
+y = np.array([1,  1, 1, -1, 1, -1 ])
 
 # Mô hình hồi quy
 model = LinearRegression()
@@ -16,7 +16,7 @@ b1 = model.coef_[0]
 r2 = model.score(x, y)
 
 # Dự đoán giá nhà 90 m²
-predict_90 = model.predict([[90]])
+predict_90 = model.predict([[3000]])
 
 print(f"Phương trình hồi quy: y = {b0:.2f} + {b1:.2f}x")
 print(f"Hệ số xác định R² = {r2:.3f}")

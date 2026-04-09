@@ -17,7 +17,7 @@ Tài liệu được biên soạn với các mục đích cụ thể:
 - Tính thực tiễn: Kết hợp hài hòa giữa lý thuyết, minh họa thực nghiệm và các ứng dụng trong thực tế.
 ---
 
-**Biên soạn:** *GS Trần Hoàng Linh petertranhoanglinh@gmail.com*  
+**Biên soạn:** *Trần Hoàng Linh petertranhoanglinh@gmail.com*  
 **Chương trình:** *AI ứng dụng từ zero*  
 <div style="page-break-after: always;"></div>
 
@@ -47,7 +47,7 @@ Giải bài toán:
 
     - lập bảng so sách phương sai của từng giá trị với giá trị trung bình 
 
-    | x   | y    | $(x_i - \bar{x})$ | $(y_i - \bar{y})$ | $((x_i - \bar{x})^2)$ | $((x_i - \bar{x})(y_i - \bar{y}))$ |
+    | $x$   | $y$    | $(x_i - \bar{x})$ | $(y_i - \bar{y})$ | $((x_i - \bar{x})^2)$ | $((x_i - \bar{x})(y_i - \bar{y}))$ |
     | --- | ---- | --------------- | --------------- | ------------------- | -------------------------------- |
     | 30  | 480  | -42.5           | -445            | 1806.25             | 18962.5                          |
     | 45  | 630  | -27.5           | -295            | 756.25              | 8112.5                           |
@@ -94,9 +94,16 @@ thì trong hồi quy tuyến tính bội, bạn có thể dự đoán giá nhà 
 --> Một mô hình dự đoán có nhiều yếu tố quyết định chúng ta cần sử dụng tuyến tính bội để tạo mô hình thanh vì tuyến tính cơ bản.
 ##### b. Công thức
 \[
-  y=b_0​+b_1​x_1​+b_2​x_2​+⋯+b_n​x_n​
+  y=b_0​+b_1​x_1​+b_2​x_2​+⋯+b_n​x_n​ +ε
 \]
-##### c. Bàn luận logic
+
+Trong đó:
+ - $Y$: biến phụ thuộc (kết quả cần dự đoán)
+ - $X_i$: biến độc lập (đặc trưng đầu vào)
+ - $β_0$: hằng số chặn (intercept)
+ - $β_i$: hệ số hồi quy (mức ảnh hưởng của từng $X$)
+ - ε: sai số (noise)
+##### c. Bàn luận
 
 Nhìn vào công thức của mô hình hồi quy tuyến tính bội, ta thấy rằng để tìm được mối quan hệ giữa các biến độc lập $x_n$ và biến phụ thuộc y, mô hình cần dựa trên một số giả định thống kê nhất định.Hồi quy tuyến tính không đơn thuần là vẽ một đường thẳng “cho đẹp”, mà là ước lượng chính xác nhất mối quan hệ thật giữa các biến, dựa trên những giả định giúp mô hình phản ánh đúng bản chất dữ liệu.
 
@@ -105,7 +112,13 @@ Nhìn vào công thức của mô hình hồi quy tuyến tính bội, ta thấy
 - Giả thuyết vô hiệu:  $H_0 : b_1 = b_2 ... = b_k =0$
 Nếu bạn chứng minh giả thuyết này đúng thì phương trình của bạn là vô nghĩa vì $y$ không hề phụ thuộc $x$.
 
-- Giả thuyết đối $H_1$ thì ngược lại chỉ cần chứng minh 1 hệ số hồi quy khác không thì ta kết luận các biến $x$ dẫn tới 1 phấn sử thay đổi của $y$
+- Giả thuyết đối $H_1$ thì ngược lại chỉ cần chứng minh 1 hệ số hồi quy khác không thì ta kết luận các biến $x$ dẫn tới 1 phấn sử thay đổi của $y$ có thể hiểu nó như để chứng minh 1 thuộc tính trong hệ có thể ảnh hưởng tới kết quả của hệ theo tuyến tính.
+
+
+
+
+
+
 
 
 
