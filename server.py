@@ -96,25 +96,36 @@ def calculate_indicators(df):
 
 def fetch_single_symbol_for_screener(symbol: str):
     try:
+        # Lấy dữ liệu khoảng 250 ngày để đảm bảo đủ tính toán các chỉ báo dài hạn như MA200
         start = (datetime.now() - timedelta(days=250)).strftime('%Y-%m-%d')
         end = datetime.now().strftime('%Y-%m-%d')
+        
         q = Quote(symbol=symbol, source='VCI')
         df = q.history(start=start, end=end, interval='1D')
         
-        if df is None or df.empty: return None
+        if df is None or df.empty: 
+            return None
         
+        # Tính toán các chỉ báo kỹ thuật (RSI, MACD, MA...)
         df_indicators = calculate_indicators(df)
         dict_data = safe_to_dict(df_indicators)
         
-        if len(dict_data) >= 3:
-            # We only need the last 3 days to evaluate signal: today, yesterday, before
+        # Kiểm tra nếu có đủ dữ liệu (ít nhất 30 phiên để nhìn được xu hướng tháng)
+        if len(dict_data) >= 30:
             return {
                 'symbol': symbol,
-                'today': dict_data[-1],
-                'yesterday': dict_data[-2],
-                'before': dict_data[-3]
+                'last_updated': datetime.now().strftime('%Y-%m-%d %H:%M:%S'),
+                'current_data': dict_data[-1],  # Dữ liệu phiên mới nhất
+                'signal_context': {
+                    'today': dict_data[-1],
+                    'yesterday': dict_data[-2],
+                    'before': dict_data[-3]
+                },
+                # Trả về 30 phiên gần nhất để vẽ biểu đồ hoặc lọc xu hướng
+                'history_30d': dict_data[-30:] 
             }
         return None
+        
     except Exception as e:
         print(f"Error fetching {symbol} for screener: {e}")
         return None
@@ -133,11 +144,14 @@ def get_single_signal(symbol: str):
             return {"error": f"Không tìm thấy dữ liệu cho {symbol}"}
         
         # Trả về kết quả sạch sẽ để Java lưu DB
+        # res['signal_context'] chứa today, yesterday, before
+        ctx = res.get('signal_context', {})
         return {
             "symbol": symbol.upper(),
-            "today": res['today'],
-            "yesterday": res['yesterday'],
-            "before": res['before'],
+            "today": ctx.get('today'),
+            "yesterday": ctx.get('yesterday'),
+            "before": ctx.get('before'),
+            "last_updated": res.get('last_updated'),
             "timestamp": time.time()
         }
     except Exception as e:

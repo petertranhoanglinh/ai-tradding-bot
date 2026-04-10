@@ -1,0 +1,8 @@
+fastapi
+uvicorn
+vnstock
+pandas
+numpy
+pydantic
+python-multipart
+httpx
