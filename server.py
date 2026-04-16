@@ -49,21 +49,43 @@ def clean_data(obj):
         return str(obj)
 
 
-def safe_to_dict(df):
-    if df is None or df.empty:
-        return []
-    records = df.to_dict('records')
-    return [{k: clean_data(v) for k, v in record.items()} for record in records]
+def safe_to_dict(df_row):
+    if df_row is None: return {}
+    # Chuyển đổi hàng thành dictionary
+    raw_dict = df_row.to_dict() if hasattr(df_row, 'to_dict') else df_row
+    clean_dict = {}
+    for k, v in raw_dict.items():
+        # Xử lý key (tránh tuple từ MultiIndex)
+        new_key = "_".join(map(str, k)).lower() if isinstance(k, tuple) else str(k).lower()
+        
+        # Xử lý value: Chuyển toàn bộ kiểu dữ liệu NumPy sang Python thuần (int, float, str)
+        if pd.isna(v) or (isinstance(v, float) and (np.isinf(v) or np.isnan(v))):
+            clean_dict[new_key] = 0
+        elif isinstance(v, (np.int64, np.int32)):
+            clean_dict[new_key] = int(v)
+        elif isinstance(v, (np.float64, np.float32)):
+            clean_dict[new_key] = float(v)
+        else:
+            clean_dict[new_key] = v
+    return clean_dict
 
 def calculate_indicators(df):
     try:
         if df is None or df.empty: return df
-        # Ensure column names are clean and flat
+        
+        # 1. Làm sạch tên cột
         if isinstance(df.columns, pd.MultiIndex):
             df.columns = ['_'.join(map(str, col)).strip().lower() for col in df.columns.values]
         else:
-            df.columns = [str(c).lower() for c in df.columns]
+            df.columns = [str(c).lower().strip() for c in df.columns]
         
+        # 2. ÉP KIỂU SỐ (Trừ các cột liên quan đến thời gian)
+        time_keywords = ['time', 'date', 'ngày', 'index']
+        for col in df.columns:
+            if not any(key in col for key in time_keywords):
+                df[col] = pd.to_numeric(df[col], errors='coerce')
+
+        # 3. Xác định cột giá đóng cửa
         close_col = 'close' if 'close' in df.columns else None
         if not close_col:
             for c in df.columns:
@@ -71,28 +93,50 @@ def calculate_indicators(df):
         
         if not close_col: return df
         
-        # Technical Indicators
+        df[close_col] = df[close_col].ffill().bfill().fillna(0)
+
+        # 4. Tính toán Technical Indicators
         df['sma20'] = df[close_col].rolling(window=20, min_periods=1).mean()
         df['sma50'] = df[close_col].rolling(window=50, min_periods=1).mean()
         df['sma200'] = df[close_col].rolling(window=200, min_periods=1).mean()
         
-        # RSI
         delta = df[close_col].diff()
         gain = (delta.where(delta > 0, 0)).rolling(window=14, min_periods=1).mean()
         loss = (-delta.where(delta < 0, 0)).rolling(window=14, min_periods=1).mean()
         rs = gain / (loss + 1e-9)
         df['rsi'] = 100 - (100 / (1 + rs))
         
-        # MACD
         ema12 = df[close_col].ewm(span=12, adjust=False).mean()
         ema26 = df[close_col].ewm(span=26, adjust=False).mean()
         df['macd'] = ema12 - ema26
         df['macd_signal'] = df['macd'].ewm(span=9, adjust=False).mean()
         
-        return df
+        # 5. XỬ LÝ CỘT THỜI GIAN (Sửa lỗi 'dt')
+        df = df.reset_index()
+        target_time_col = None
+        
+        # Tìm cột thời gian đầu tiên hợp lệ
+        for tc in ['date', 'time', 'ngày', 'index']:
+            if tc in df.columns:
+                # Ép kiểu cho Series cụ thể
+                df[tc] = pd.to_datetime(df[tc], errors='coerce')
+                target_time_col = tc
+                break
+        
+        if target_time_col:
+            # Dùng Series.dt thay vì DataFrame.dt
+            formatted_time = df[target_time_col].dt.strftime('%Y-%m-%d')
+            # Loại bỏ các cột thời gian cũ để tránh trùng lặp tên khi rename
+            cols_to_drop = [c for c in ['date', 'time', 'ngày', 'index'] if c in df.columns]
+            df.drop(columns=cols_to_drop, inplace=True)
+            # Gán lại cột chuẩn
+            df['time'] = formatted_time
+        
+        return df.fillna(0)
     except Exception as e:
-        print(f"Error calculating indicators: {e}")
+        print(f"Lỗi Indicators: {e}")
         return df
+
 
 def fetch_single_symbol_for_screener(symbol: str):
     try:
@@ -485,6 +529,66 @@ def get_listing(type: str = "ALL"):
     except Exception as e:
         print(f"Listing critical error: {e}")
         return []
+
+@app.get("/api/stock/{symbol}")
+def get_stock(symbol: str):
+    try:
+        vn = Vnstock()
+        symbol = symbol.upper()
+        
+        # Thử các nguồn hỗ trợ
+        supported_sources = ['VCI', 'KBS', 'MSN', 'FMP']
+        df = None
+        main_stock = None
+
+        for src in supported_sources:
+            try:
+                s = vn.stock(symbol=symbol, source=src)
+                # Lấy dữ liệu và đảm bảo nó là DataFrame
+                temp_df = s.quote.history(start=(datetime.now() - timedelta(days=150)).strftime('%Y-%m-%d'))
+                if isinstance(temp_df, pd.DataFrame) and not temp_df.empty:
+                    df = temp_df.copy() # Copy để tránh lỗi tham chiếu
+                    main_stock = s
+                    break
+            except:
+                continue
+
+        result = {
+            "symbol": symbol,
+            "analysis_time": datetime.now().isoformat(),
+            "latest_indicators": {},
+            "price_history_30_days": [],
+            "news": []
+        }
+
+        # Kiểm tra chắc chắn df là DataFrame trước khi xử lý
+        if isinstance(df, pd.DataFrame) and not df.empty:
+            df = calculate_indicators(df)
+            df_last_30 = df.tail(30)
+            result["price_history_30_days"] = [safe_to_dict(row) for _, row in df_last_30.iterrows()]
+            
+            latest = df.iloc[-1]
+            result["latest_indicators"] = {
+                "current_price": float(latest.get('close', 0)),
+                "rsi": round(float(latest.get('rsi', 0)), 2),
+                "sma20": round(float(latest.get('sma20', 0)), 2),
+                "sma50": round(float(latest.get('sma50', 0)), 2)
+            }
+
+        # Lấy tin tức
+        if main_stock:
+            try:
+                news_df = main_stock.company.news()
+                if isinstance(news_df, pd.DataFrame) and not news_df.empty:
+                    result["news"] = [safe_to_dict(row) for _, row in news_df.head(10).iterrows()]
+            except:
+                pass
+
+        return clean_data(result)
+
+    except Exception as e:
+        # Trả về lỗi chi tiết để debug
+        raise HTTPException(status_code=500, detail=f"Lỗi Python: {str(e)}")
 
 if __name__ == "__main__":
     uvicorn.run("server:app", host="0.0.0.0", port=8000, reload=True)
